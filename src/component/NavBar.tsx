@@ -57,10 +57,10 @@ const NavBar: React.FC<Props> = ({ logout }) => {
             Dashboard
           </Typography>
           <Button color="inherit" component={Link} to="/apartment">
-            Create Apartment
+            Apartment
           </Button>
           <Button color="inherit" component={Link} to="/user">
-            Create User
+            User
           </Button>
           <div>
             <IconButton

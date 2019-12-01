@@ -58,23 +58,23 @@ const Login: React.FC<Props> = ({ history }) => {
   );
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // history.push('/home');
-    if (state.email === 'admin@gmail.com' && state.password === 'admin') {
-      console.log('success');
-      history.push('/home');
-    } else {
-      if (!state.email) {
-        let newState = { ...state };
-        newState.errors.email = 'Incorrect entry.';
-        setState(newState);
-      }
+    history.push('/home');
+    // if (state.email === 'admin@gmail.com' && state.password === 'admin') {
+    //   console.log('success');
+    //   history.push('/home');
+    // } else {
+    //   if (!state.email) {
+    //     let newState = { ...state };
+    //     newState.errors.email = 'Incorrect entry.';
+    //     setState(newState);
+    //   }
 
-      if (!state.password) {
-        let newState = { ...state };
-        newState.errors.password = 'Incorrect entry.';
-        setState(newState);
-      }
-    }
+    //   if (!state.password) {
+    //     let newState = { ...state };
+    //     newState.errors.password = 'Incorrect entry.';
+    //     setState(newState);
+    //   }
+    // }
   };
 
   return (

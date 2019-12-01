@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Home from './pages/Home';
 import User from './pages/User';
 import Apartment from './pages/Apartment';
+import UserForm from './pages/UserForm';
 
 const App: React.FC = () => {
   return (
@@ -16,6 +17,7 @@ const App: React.FC = () => {
             <Route exact path="/home" component={Home} />
             <Route exact path="/user" component={User} />
             <Route exact path="/apartment" component={Apartment} />
+            <Route exact path="/user-form" component={UserForm} />
           </Switch>
         </div>
       </BrowserRouter>
