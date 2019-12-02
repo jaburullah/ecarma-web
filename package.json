@@ -39,5 +39,5 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "https://us-central1-ecarma-65b5c.cloudfunctions.net/"
+  "proxy": "https://us-central1-ecarma-65b5c.cloudfunctions.net/api"
 }

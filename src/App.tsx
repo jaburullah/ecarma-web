@@ -8,7 +8,10 @@ import Apartment from './pages/Apartment';
 import UserForm from './pages/UserForm';
 import { AppReducer } from './store/reducer';
 import { AppContext } from './store/context';
+import Axios from 'axios';
 
+Axios.defaults.baseURL =
+  'https://us-central1-ecarma-65b5c.cloudfunctions.net/api';
 const App: React.FC = () => {
   const [state, dispatch] = React.useReducer(AppReducer, {
     users: [],

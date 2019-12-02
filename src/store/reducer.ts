@@ -31,6 +31,15 @@ export const AppReducer = (state: AppState, action: Action) => {
     case 'ADD_USER':
       newState.users.push(action.payload.newUser);
       return newState;
+    case 'UPDATE_USER':
+      if (action.payload.oldUser) {
+        newState.users[newState.users.indexOf(action.payload.oldUser)] =
+          action.payload.newUser;
+      }
+      return newState;
+    case 'DELETE_USER':
+      newState.users.splice(newState.users.indexOf(action.payload.oldUser), 1);
+      return newState;
     default:
       return state;
   }

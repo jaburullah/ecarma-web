@@ -13,7 +13,7 @@ const User: React.FC<Props> = ({ history }) => {
     history.push('/');
   };
   const onClickEdit = (row: Data) => {
-    history.push(`/user-form/${row.apartmentID}`);
+    history.push(`/user-form/${row.userID}`);
   };
   const onClickAdd = () => {
     history.push('/user-form');
@@ -38,7 +38,7 @@ const User: React.FC<Props> = ({ history }) => {
     if (!data.length) {
       getAllUsers();
     }
-  }, [AppState]);
+  }, [data]);
 
   return (
     <div>
