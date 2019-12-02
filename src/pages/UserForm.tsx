@@ -15,7 +15,15 @@ import {
   FormHelperText
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
-
+import { AppContext } from '../store/context';
+import { AppState } from '../types';
+import axios from 'axios';
+import Dialog from '@material-ui/core/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogContentText from '@material-ui/core/DialogContentText';
+import DialogTitle from '@material-ui/core/DialogTitle';
+import { useParams } from 'react-router-dom';
 interface Props extends RouterProps {}
 
 const useStyles = makeStyles(theme => ({
@@ -49,18 +57,24 @@ const MenuProps = {
 };
 
 const UserForm: React.FC<Props> = ({ history }) => {
+  const { AppState, dispatch } = React.useContext(AppContext);
+  const [open, setOpen] = React.useState(false);
+
+  let { id } = useParams();
+
+  const [isEditMode, setIsEditMode] = React.useState(id ? true : false);
+
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
   const classes = useStyles();
   const maxChartPassword = 4;
-  const apartments = [
-    { name: 'apartment 1', id: '18eYGhUuKx66AF04MViP' },
-    { name: 'apartment 2', id: '18eYGhUuKx66AF04MViV' },
-    { name: 'apartment 3', id: '18eYGhUuKx66AF04MViX' },
-    { name: 'apartment 4', id: '18eYGhUuKx66AF04MViZ' },
-    { name: 'apartment 5', id: '18eYGhUuKx66AF04MViT' },
-    { name: 'apartment 6', id: '18eYGhUuKx66AF04MViE' },
-    { name: 'apartment 7', id: '18eYGhUuKx66AF04MViG' },
-    { name: 'apartment 8', id: '18eYGhUuKx66AF04MVi1' }
-  ];
+  const apartments = (AppState as AppState).apartments;
+  const users = (AppState as AppState).users;
   const logout = () => {
     history.push('/');
   };
@@ -77,15 +91,16 @@ const UserForm: React.FC<Props> = ({ history }) => {
     newState.errors.apartmentID = '';
     setState(newState);
   };
-
+  const handleOnClickBack = () => {
+    history.goBack();
+  };
   const handleChangeRole = (event: React.ChangeEvent<{ value: unknown }>) => {
     setRole(event.target.value as string);
     let newState = { ...state };
     newState.errors.roles = '';
     setState(newState);
   };
-
-  const [state, setState] = React.useState({
+  const initialState = {
     name: '',
     password: '',
     confirmPassword: '',
@@ -100,13 +115,35 @@ const UserForm: React.FC<Props> = ({ history }) => {
       mobileNo: '',
       apartmentID: ''
     }
-  });
+  };
+  const [state, setState] = React.useState(initialState);
   type InputName = 'name' | 'password' | 'confirmPassword' | 'mobileNo';
   const updateState = (e: React.ChangeEvent<HTMLInputElement>) => {
     let newState = { ...state };
     newState[e.target.name as InputName] = e.target.value;
     newState.errors[e.target.name as InputName] = '';
     setState(newState);
+  };
+
+  const addUser = (data: any) => {
+    axios
+      .post('/addUser', data)
+      .then(res => {
+        if (res.data && !res.data.success) {
+          let newState = { ...state };
+          newState.errors.mobileNo = 'Mobile No already exists.';
+          setState(newState);
+        } else {
+          setState(initialState);
+          setRole('');
+          setSelectedApartments([]);
+          dispatch({ type: 'ADD_USER', payload: { newUser: res.data } });
+          handleClickOpen();
+        }
+      })
+      .catch(err => {
+        console.log(err);
+      });
   };
 
   const onSubmit = (e: React.FormEvent) => {
@@ -171,13 +208,21 @@ const UserForm: React.FC<Props> = ({ history }) => {
     delete data.confirmPassword;
     data.roles = [role];
     data.apartmentID = selectedApartments;
-    console.log('submitted', data);
+
+    const u = users.filter(o => o.mobileNo === data.mobileNo);
+    if (u[0]) {
+      let newState = { ...state };
+      newState.errors.mobileNo = 'Mobile No already exists.';
+      setState(newState);
+    } else {
+      addUser(data);
+    }
   };
 
   const getApartmentNameById = (selected: string[]) => {
     return selected
       .map(o => {
-        const v = apartments.filter(d => d.id === o);
+        const v = apartments.filter(d => d.apartmentID === o);
         return v[0].name;
       })
       .join(', ');
@@ -294,9 +339,14 @@ const UserForm: React.FC<Props> = ({ history }) => {
                   MenuProps={MenuProps}
                 >
                   {apartments.map(apartment => (
-                    <MenuItem key={apartment.id} value={apartment.id}>
+                    <MenuItem
+                      key={apartment.apartmentID}
+                      value={apartment.apartmentID}
+                    >
                       <Checkbox
-                        checked={selectedApartments.indexOf(apartment.id) > -1}
+                        checked={
+                          selectedApartments.indexOf(apartment.apartmentID) > -1
+                        }
                       />
                       <ListItemText primary={apartment.name} />
                     </MenuItem>
@@ -313,29 +363,66 @@ const UserForm: React.FC<Props> = ({ history }) => {
                 justify="flex-end"
                 alignItems="center"
               >
-                <Button variant="contained" className={classes.submit}>
-                  Back
-                </Button>
                 <Button
                   variant="contained"
-                  color="secondary"
                   className={classes.submit}
+                  onClick={handleOnClickBack}
                 >
-                  Delete
+                  Back
                 </Button>
+                {isEditMode && (
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    className={classes.submit}
+                  >
+                    Delete
+                  </Button>
+                )}
                 <Button
                   variant="contained"
                   color="primary"
                   type="submit"
                   className={classes.submit}
                 >
-                  Save
+                  {isEditMode ? 'Update' : 'Save'}
                 </Button>
+              </Grid>
+
+              <Grid
+                container
+                direction="row"
+                justify="flex-end"
+                alignItems="center"
+              >
+                <FormHelperText></FormHelperText>
               </Grid>
             </form>
           </Grid>
+
           <Grid item xs></Grid>
         </Grid>
+        <Dialog
+          open={open}
+          onClose={handleClose}
+          aria-labelledby="alert-dialog-title"
+          aria-describedby="alert-dialog-description"
+        >
+          <DialogTitle id="alert-dialog-title">{'Info'}</DialogTitle>
+          <DialogContent>
+            <DialogContentText id="alert-dialog-description">
+              User Added Successfully
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleClose} color="primary">
+              Close
+            </Button>
+            <Button onClick={handleClose} color="primary" autoFocus>
+              Ok
+            </Button>
+          </DialogActions>
+        </Dialog>
       </div>
     </div>
   );

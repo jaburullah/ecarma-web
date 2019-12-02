@@ -1,6 +1,8 @@
 import React from 'react';
 import MaterialTable, { Column } from 'material-table';
 import axios from 'axios';
+import { AppContext } from '../store/context';
+import { AppState } from '../types';
 
 interface Row {
   apartmentID: string;
@@ -8,84 +10,70 @@ interface Row {
 }
 
 interface TableState {
-  columns: Array<Column<Row>>;
-  data: Row[];
+  count: number;
 }
 
 interface Props {}
 const ApartmentTable: React.FC<Props> = () => {
+  const { AppState, dispatch } = React.useContext(AppContext);
+  let data = (AppState as AppState).apartments;
+  const columns = [{ title: 'Name', field: 'name' }];
+
   const [state, setState] = React.useState<TableState>({
-    columns: [{ title: 'Name', field: 'name' }],
-    data: []
+    count: 0
   });
-  const getApartments = () => {
-    axios
-      .get('/getAllApartment')
-      .then(res => {
-        setState(c => {
-          let nC = { ...c };
-          nC.data = res.data;
-          return nC;
-        });
-      })
-      .catch(err => {
-        console.log(err);
-        setState(c => {
-          let nC = { ...c };
-          nC.data = [];
-          return nC;
-        });
-      });
-  };
-  React.useEffect(() => {
-    getApartments();
-  }, []);
 
   return (
     <MaterialTable
       title="Manage Apartments"
-      columns={state.columns}
-      data={state.data}
+      columns={columns}
+      data={data}
       editable={{
         onRowAdd: newData =>
           new Promise(resolve => {
-            axios.post('/addApartment', newData).then(d => {
-              console.log('success', d.data);
-              resolve();
-              setState(prevState => {
-                const data = [...prevState.data];
-                data.push(d.data);
-                return { ...prevState, data };
-              });
-            });
+            axios
+              .post('/addApartment', newData)
+              .then(d => {
+                console.log('success', d.data);
+                resolve();
+
+                dispatch({
+                  type: 'ADD_APARTMENT',
+                  payload: { newApartment: d.data }
+                });
+                setState({ count: state.count + 1 });
+              })
+              .catch(e => console.log(e));
           }),
         onRowUpdate: (newData, oldData) =>
           new Promise(resolve => {
-            axios.post('/updateApartment', newData).then(d => {
-              const data = d;
-              console.log('success', data);
-              resolve();
-              if (oldData) {
-                setState(prevState => {
-                  const data = [...prevState.data];
-                  data[data.indexOf(oldData)] = newData;
-                  return { ...prevState, data };
+            axios
+              .post('/updateApartment', newData)
+              .then(data => {
+                console.log('success', data);
+                resolve();
+                dispatch({
+                  type: 'UPDATE_APARTMENT',
+                  payload: { newApartment: newData, oldApartment: oldData }
                 });
-              }
-            });
+                setState({ count: state.count + 1 });
+              })
+              .catch(e => console.log(e));
           }),
         onRowDelete: oldData =>
           new Promise(resolve => {
-            axios.post('/deleteApartment', oldData).then(d => {
-              const data = d;
-              console.log('success', data);
-              resolve();
-              setState(prevState => {
-                const data = [...prevState.data];
-                data.splice(data.indexOf(oldData), 1);
-                return { ...prevState, data };
-              });
-            });
+            axios
+              .post('/deleteApartment', { apartmentID: oldData.apartmentID })
+              .then(data => {
+                console.log('success', data);
+                resolve();
+                dispatch({
+                  type: 'DELETE_APARTMENT',
+                  payload: { oldApartment: oldData }
+                });
+                setState({ count: state.count + 1 });
+              })
+              .catch(e => console.log(e));
           })
       }}
     />

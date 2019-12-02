@@ -26,6 +26,8 @@ import AddIcon from '@material-ui/icons/Add';
 import EditIcon from '@material-ui/icons/Edit';
 import DeleteIcon from '@material-ui/icons/Delete';
 import axios from 'axios';
+import { AppState } from '../types';
+import { AppContext } from '../store/context';
 
 export interface Data {
   name: string;
@@ -180,9 +182,6 @@ function EnhancedTableHead(props: EnhancedTableProps) {
         <TableCell align="center" padding="checkbox">
           Edit
         </TableCell>
-        <TableCell align="center" padding="checkbox">
-          Delete
-        </TableCell>
       </TableRow>
     </TableHead>
   );
@@ -212,6 +211,7 @@ const useToolbarStyles = makeStyles((theme: Theme) =>
 
 interface EnhancedTableToolbarProps {
   numSelected: number;
+  onClickAdd: () => void;
 }
 
 const EnhancedTableToolbar = (props: EnhancedTableToolbarProps) => {
@@ -250,7 +250,7 @@ const EnhancedTableToolbar = (props: EnhancedTableToolbarProps) => {
         </Tooltip>
       ) : (
         <Tooltip title="Add New User">
-          <IconButton aria-label="add new user">
+          <IconButton aria-label="add new user" onClick={props.onClickAdd}>
             <AddIcon />
           </IconButton>
         </Tooltip>
@@ -290,9 +290,10 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 interface Props {
   onClickEdit: (row: Data) => void;
+  onClickAdd: () => void;
 }
 
-const UserTable: React.FC<Props> = ({ onClickEdit }) => {
+const UserTable: React.FC<Props> = ({ onClickEdit, onClickAdd }) => {
   const classes = useStyles();
   const [order, setOrder] = React.useState<Order>('asc');
   const [orderBy, setOrderBy] = React.useState<keyof Data>('name');
@@ -301,24 +302,26 @@ const UserTable: React.FC<Props> = ({ onClickEdit }) => {
   const [dense, setDense] = React.useState(false);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
 
-  const [rows, setRows] = React.useState<Rows>([
-    { name: '', userID: '', roles: [''], apartmentID: [''], password: '' }
-  ]);
+  const { AppState, dispatch } = React.useContext(AppContext);
+  const data = (AppState as AppState).users;
 
-  const getAllUsers = () => {
-    axios
-      .get('/getAllUser')
-      .then(res => {
-        setRows(res.data);
-      })
-      .catch(err => {
-        console.log(err);
-        setRows([]);
-      });
-  };
-  React.useEffect(() => {
-    getAllUsers();
-  }, []);
+  const [rows, setRows] = React.useState<Rows>(data);
+
+  // const getAllUsers = () => {
+  //   axios
+  //     .get('/getAllUser')
+  //     .then(res => {
+  //       setRows(res.data);
+  //     })
+  //     .catch(err => {
+  //       console.log(err);
+  //       setRows([]);
+  //     });
+  // };
+  // React.useEffect(() => {
+  //   getAllUsers();
+  // }, []);
+
   const handleRequestSort = (
     event: React.MouseEvent<unknown>,
     property: keyof Data
@@ -375,12 +378,15 @@ const UserTable: React.FC<Props> = ({ onClickEdit }) => {
   const isSelected = (name: string) => selected.indexOf(name) !== -1;
 
   const emptyRows =
-    rowsPerPage - Math.min(rowsPerPage, rows.length - page * rowsPerPage);
+    rowsPerPage - Math.min(rowsPerPage, data.length - page * rowsPerPage);
 
   return (
     <div className={classes.root}>
       <Paper className={classes.paper}>
-        <EnhancedTableToolbar numSelected={selected.length} />
+        <EnhancedTableToolbar
+          numSelected={selected.length}
+          onClickAdd={onClickAdd}
+        />
         <div className={classes.tableWrapper}>
           <Table
             className={classes.table}
@@ -395,10 +401,10 @@ const UserTable: React.FC<Props> = ({ onClickEdit }) => {
               orderBy={orderBy}
               onSelectAllClick={handleSelectAllClick}
               onRequestSort={handleRequestSort}
-              rowCount={rows.length}
+              rowCount={data.length}
             />
             <TableBody>
-              {rows
+              {data
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((row, index) => {
                   const isItemSelected = isSelected(row.name);
@@ -410,7 +416,7 @@ const UserTable: React.FC<Props> = ({ onClickEdit }) => {
                       role="checkbox"
                       aria-checked={isItemSelected}
                       tabIndex={-1}
-                      key={row.name}
+                      key={labelId}
                       selected={isItemSelected}
                     >
                       {/* <TableCell padding="checkbox">
@@ -435,13 +441,6 @@ const UserTable: React.FC<Props> = ({ onClickEdit }) => {
                           }}
                         />
                       </TableCell>
-                      <TableCell align="center">
-                        <DeleteIcon
-                          onClick={d => {
-                            onClickEdit(row);
-                          }}
-                        />
-                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -456,7 +455,7 @@ const UserTable: React.FC<Props> = ({ onClickEdit }) => {
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
-          count={rows.length}
+          count={data.length}
           rowsPerPage={rowsPerPage}
           page={page}
           onChangePage={handleChangePage}
