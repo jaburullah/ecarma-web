@@ -368,7 +368,7 @@ const UserForm: React.FC<Props> = ({ history }) => {
     return selected
       .map(o => {
         const v = apartments.filter(d => d.apartmentID === o);
-        return v[0].name;
+        return (v && v[0].name) || '';
       })
       .join(', ');
   };
