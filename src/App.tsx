@@ -11,7 +11,7 @@ import { AppContext } from './store/context';
 import Axios from 'axios';
 
 Axios.defaults.baseURL =
-  'https://us-central1-ecarma-65b5c.cloudfunctions.net/api';
+  'https://us-central1-ecarma-72d10.cloudfunctions.net/api';
 const App: React.FC = () => {
   const [state, dispatch] = React.useReducer(AppReducer, {
     users: [],
