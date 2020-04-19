@@ -12,7 +12,7 @@ import {
   Input,
   Checkbox,
   ListItemText,
-  FormHelperText
+  FormHelperText,
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import { AppContext } from '../store/context';
@@ -26,23 +26,23 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import { useParams } from 'react-router-dom';
 interface Props extends RouterProps {}
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
-    flexGrow: 1
+    flexGrow: 1,
   },
   paper: {
     padding: 2,
-    textAlign: 'center'
+    textAlign: 'center',
   },
   formControl: {
-    minWidth: 120
+    minWidth: 120,
   },
   selectEmpty: {
-    marginTop: 20
+    marginTop: 20,
   },
   submit: {
-    margin: theme.spacing(3, 1, 2)
-  }
+    margin: theme.spacing(3, 1, 2),
+  },
 }));
 
 const ITEM_HEIGHT = 48;
@@ -51,9 +51,9 @@ const MenuProps = {
   PaperProps: {
     style: {
       maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-      width: 250
-    }
-  }
+      width: 250,
+    },
+  },
 };
 
 const UserForm: React.FC<Props> = ({ history }) => {
@@ -65,8 +65,9 @@ const UserForm: React.FC<Props> = ({ history }) => {
   const [isEditMode, setIsEditMode] = React.useState(id ? true : false);
   const [isLoading, setLoading] = React.useState(true);
 
-  const dialogMsgAddEdit = `User ${(!isEditMode && 'Added') ||
-    'Edited'} Successfully`;
+  const dialogMsgAddEdit = `User ${
+    (!isEditMode && 'Added') || 'Edited'
+  } Successfully`;
   const dialogMsgDelete = `Are you sure you want to delete this User ?`;
 
   const [dialogMsg, setDialogMsg] = React.useState(dialogMsgAddEdit);
@@ -76,16 +77,16 @@ const UserForm: React.FC<Props> = ({ history }) => {
     if (isDeleteMode) {
       axios
         .post('/deleteUser', { userID: editUser.userID })
-        .then(data => {
+        .then((data) => {
           console.log('success', data);
           setDialogMsg('User deleted successfully');
           setDeleteMode(false);
           dispatch({
             type: 'DELETE_USER',
-            payload: { oldUser: editUser }
+            payload: { oldUser: editUser },
           });
         })
-        .catch(e => console.log(e));
+        .catch((e) => console.log(e));
     }
     if (!isDeleteMode) {
       history.push('/user');
@@ -110,7 +111,11 @@ const UserForm: React.FC<Props> = ({ history }) => {
   const handleChangeApartment = (
     event: React.ChangeEvent<{ value: unknown }>
   ) => {
-    setSelectedApartments(event.target.value as string[]);
+    const apartmentIDs = event.target.value as string[];
+    setSelectedApartments(apartmentIDs);
+    if (role === 'secretary' && apartmentIDs.length) {
+      setSelectedApartments(apartmentIDs.slice(-1));
+    }
     let newState = { ...state };
     newState.errors.apartmentID = '';
     setState(newState);
@@ -125,6 +130,7 @@ const UserForm: React.FC<Props> = ({ history }) => {
     setRole(event.target.value as string);
     let newState = { ...state };
     newState.errors.roles = '';
+    setSelectedApartments([]);
     setState(newState);
   };
   const initialState = {
@@ -141,8 +147,8 @@ const UserForm: React.FC<Props> = ({ history }) => {
       confirmPassword: '',
       roles: '',
       mobileNo: '',
-      apartmentID: ''
-    }
+      apartmentID: '',
+    },
   };
 
   const [role, setRole] = React.useState('');
@@ -151,18 +157,21 @@ const UserForm: React.FC<Props> = ({ history }) => {
   );
   let editUser: any = null;
   if (isEditMode && apartments.length) {
-    editUser = users.filter(o => o.userID === id)[0];
+    editUser = users.filter((o) => o.userID === id)[0];
     if (editUser) {
       initialState.name = editUser.name;
       initialState.password = editUser.password;
       initialState.confirmPassword = editUser.password;
       initialState.roles = editUser.roles;
       initialState.mobileNo = editUser.mobileNo;
-      initialState.apartmentID = editUser.apartmentID;
+      initialState.apartmentID =
+        editUser.roles.indexOf('secretary') >= 0
+          ? editUser.apartmentID.slice(-1)
+          : editUser.apartmentID;
     } else {
       axios
         .post('/getUserById', { userID: id })
-        .then(d => {
+        .then((d) => {
           const data = d.data;
           const userData = data.data;
           if (!data.success) {
@@ -173,13 +182,16 @@ const UserForm: React.FC<Props> = ({ history }) => {
             initialState.confirmPassword = userData.password;
             initialState.roles = userData.roles;
             initialState.mobileNo = userData.mobileNo;
-            initialState.apartmentID = userData.apartmentID;
+            initialState.apartmentID =
+              userData.roles.indexOf('secretary') >= 0
+                ? userData.apartmentID.slice(-1)
+                : userData.apartmentID;
             setState(initialState);
             setRole(userData.roles[0]);
             setSelectedApartments(initialState.apartmentID);
           }
         })
-        .catch(e => console.log(e));
+        .catch((e) => console.log(e));
     }
   }
 
@@ -192,11 +204,11 @@ const UserForm: React.FC<Props> = ({ history }) => {
   const getApartments = () => {
     axios
       .get('/getAllApartment')
-      .then(res => {
+      .then((res) => {
         dispatch({ type: 'SET_APARTMENT', payload: { apartments: res.data } });
         setLoading(false);
       })
-      .catch(err => {
+      .catch((err) => {
         console.log(err);
         dispatch({ type: 'SET_APARTMENT', payload: { apartments: [] } });
       });
@@ -210,7 +222,12 @@ const UserForm: React.FC<Props> = ({ history }) => {
       if (editUser) {
         setState(initialState);
         setRole(editUser.roles[0]);
-        setSelectedApartments(editUser.apartmentID);
+        const userApartmentID =
+          editUser.roles.indexOf('secretary') >= 0
+            ? editUser.apartmentID.slice(-1)
+            : editUser.apartmentID;
+
+        setSelectedApartments(userApartmentID);
       }
     }
   }, [AppState]);
@@ -227,7 +244,7 @@ const UserForm: React.FC<Props> = ({ history }) => {
   const addUser = (data: any) => {
     axios
       .post('/addUser', data)
-      .then(res => {
+      .then((res) => {
         const data = res.data;
         if (!data.success) {
           let newState = { ...state };
@@ -241,7 +258,7 @@ const UserForm: React.FC<Props> = ({ history }) => {
           handleClickOpen();
         }
       })
-      .catch(err => {
+      .catch((err) => {
         console.log(err);
       });
   };
@@ -249,7 +266,7 @@ const UserForm: React.FC<Props> = ({ history }) => {
   const updateUser = (data: any, oldUser: any) => {
     axios
       .post('/updateUser', data)
-      .then(res => {
+      .then((res) => {
         if (res.data && !res.data.success) {
           let newState = { ...state };
           newState.errors.mobileNo = 'Mobile No already exists.';
@@ -269,20 +286,20 @@ const UserForm: React.FC<Props> = ({ history }) => {
               confirmPassword: '',
               roles: '',
               mobileNo: '',
-              apartmentID: ''
-            }
+              apartmentID: '',
+            },
           });
           setRole('');
           setSelectedApartments([]);
 
           dispatch({
             type: 'UPDATE_USER',
-            payload: { newUser: data, oldUser }
+            payload: { newUser: data, oldUser },
           });
           handleClickOpen();
         }
       })
-      .catch(err => {
+      .catch((err) => {
         console.log(err);
       });
   };
@@ -349,7 +366,7 @@ const UserForm: React.FC<Props> = ({ history }) => {
     data.roles = [role];
     data.apartmentID = selectedApartments;
 
-    const u = users.filter(o => o.mobileNo === data.mobileNo)[0];
+    const u = users.filter((o) => o.mobileNo === data.mobileNo)[0];
     if (u && u.userID !== id) {
       let newState = { ...state };
       newState.errors.mobileNo = 'Mobile No already exists.';
@@ -366,8 +383,8 @@ const UserForm: React.FC<Props> = ({ history }) => {
 
   const getApartmentNameById = (selected: string[]) => {
     return selected
-      .map(o => {
-        const v = apartments.filter(d => d.apartmentID === o);
+      .map((o) => {
+        const v = apartments.filter((d) => d.apartmentID === o);
         return (v.length && v[0].name) || '';
       })
       .join(', ');
@@ -451,7 +468,7 @@ const UserForm: React.FC<Props> = ({ history }) => {
                     onChange={handleChangeRole}
                     name="role"
                     inputProps={{
-                      id: 'role-native-required'
+                      id: 'role-native-required',
                     }}
                   >
                     <option value={''}></option>
@@ -479,12 +496,12 @@ const UserForm: React.FC<Props> = ({ history }) => {
                     value={selectedApartments}
                     onChange={handleChangeApartment}
                     input={<Input />}
-                    renderValue={selected =>
+                    renderValue={(selected) =>
                       getApartmentNameById(selected as string[])
                     }
                     MenuProps={MenuProps}
                   >
-                    {apartments.map(apartment => (
+                    {apartments.map((apartment) => (
                       <MenuItem
                         key={apartment.apartmentID}
                         value={apartment.apartmentID}
